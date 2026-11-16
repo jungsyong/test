@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반응형 디지털 시계 & 타이머</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+        }
+
+        .clock-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            /* 상하 여백을 5% -> 30px로, 좌우 여백을 4%로 대폭 축소 */
+            padding: 30px 4%; 
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            width: 90%;
+            max-width: 650px;
+            box-sizing: border-box;
+        }
+
+        #date-box {
+            color: #7f8c8d;
+            font-size: clamp(1.1rem, 3.5vw, 2rem);
+            font-weight: 600;
+            margin-bottom: 5px; /* 날짜와 시계 간격 축소 */
+        }
+
+        #clock-box {
+            color: #2c3e50;
+            font-size: clamp(3rem, 14vw, 8rem);
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 20px; /* 시계와 타이머 구분선 간격 축소 */
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        .timer-section {
+            border-top: 2px solid #eee;
+            padding-top: 20px; /* 구분선 위쪽 간격 축소 */
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="number"] {
+            width: 65px;
+            padding: 10px;
+            font-size: 1.3rem;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            text-align: center;
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .start-btn { background-color: #3498db; color: white; }
+        .start-btn:hover { background-color: #2980b9; }
+        .reset-btn { background-color: #95a5a6; color: white; }
+        .reset-btn:hover { background-color: #7f8c8d; }
+
+        #timer-display {
+            margin-top: 15px; /* 버튼과 타이머 숫자 간격 축소 */
+            font-size: clamp(1.8rem, 7vw, 3.5rem);
+            color: #e67e22;
+            font-weight: 800;
+            min-height: 1.2em;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        @media (max-width: 480px) {
+            .clock-container {
+                padding: 25px 15px;
+            }
+            #clock-box {
+                margin-bottom: 15px;
+            }
+            .timer-section {
+                padding-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="clock-container">
+        <div id="date-box"></div>
+        <div id="clock-box">00:00:00</div>
+
+        <div class="timer-section">
+            <div class="controls-row">
+                <div class="input-group">
+                    <input type="number" id="timer-input" placeholder="0" min="1">
+                    <span style="font-size: 1.3rem; font-weight: bold; color: #333;">분</span>
+                </div>
+                <div class="button-group">
+                    <button class="start-btn" onclick="startTimer()">시작</button>
+                    <button class="reset-btn" onclick="resetTimer()">초기화</button>
+                </div>
+            </div>
+            <div id="timer-display"></div>
+        </div>
+    </div>
+
+    <script>
+        let countdown; 
+        let totalSeconds;
+
+        function updateClock() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayOfWeek = weekDays[now.getDay()];
+
+            document.getElementById('date-box').innerText = `${year}년 ${month}월 ${date}일(${dayOfWeek})`;
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock-box').innerText = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function startTimer() {
+            clearInterval(countdown);
+            const minutesInput = document.getElementById('timer-input').value;
+            if (!minutesInput || minutesInput <= 0) return;
+
+            totalSeconds = parseInt(minutesInput) * 60;
+            updateTimerDisplay();
+
+            countdown = setInterval(() => {
+                totalSeconds--;
+                updateTimerDisplay();
+                if (totalSeconds <= 0) {
+                    clearInterval(countdown);
+                    document.getElementById('timer-display').innerText = "🔔 종료!";
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            document.getElementById('timer-display').innerText = 
+                `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function resetTimer() {
+            clearInterval(countdown);
+            document.getElementById('timer-input').value = "";
+            document.getElementById('timer-display').innerText = "";
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
